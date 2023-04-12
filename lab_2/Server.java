@@ -35,11 +35,16 @@ public class Server {
                 } catch (Exception e) {
                     break;
                 }
-                int answerSize = inFromClient.read(answer);
-                if (answerSize == -1) break;
-                System.out.println("Message: " + new String(answer,0,answerSize));
-                System.out.println("Size: " + answerSize);
-                outToClient.write(answer, 0, answerSize);
+                try {
+                    int answerSize = inFromClient.read(answer);
+                    if (answerSize == -1) break;
+                    System.out.println("Message: " + new String(answer, 0, answerSize));
+                    System.out.println("Size: " + answerSize);
+                    outToClient.write(answer, 0, answerSize);
+                }catch (Exception e){
+                    System.out.println("Connection interrupted");
+                    break;
+                }
             }
         }
     }

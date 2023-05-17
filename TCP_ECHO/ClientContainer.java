@@ -18,15 +18,16 @@ public class ClientContainer extends Thread{
         this.clientSocket = clientSocket;
         this.id = id;
         this.permission = permission;
+        inFromClient = new DataInputStream(clientSocket.getInputStream());
         outToClient = new DataOutputStream(clientSocket.getOutputStream());
         if(!permission){
+            int temp = inFromClient.read(answer);
             answer = "SERVER BUSY".getBytes();
             outToClient.write(answer, 0, answer.length);
             clientSocket.close();
             running = false;
         }
         else {
-            inFromClient = new DataInputStream(clientSocket.getInputStream());
             running = true;
         }
 

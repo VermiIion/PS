@@ -24,11 +24,21 @@ public class Server {
     public static void main(String[] argv) throws Exception {
         int maxClients = 3;
         int port = 7;
-        Server server = new Server(7,maxClients);
+        Server server = new Server(port,maxClients);
         ArrayList<ClientContainer> clients = new ArrayList<ClientContainer>();
         ServerSocket serverSocket = new ServerSocket();
         serverSocket.bind(new InetSocketAddress(7));
+        int closeFlag = 0;
         while (true){
+            if(!clients.isEmpty()) {
+                for (ClientContainer c : clients) {
+                    if (!c.running) {
+                        c.clientSocket.close();
+                        clients.remove(c);
+                    }
+                }
+                if(clients.isEmpty()) closeFlag = 1;
+            }
             Socket cleanSocket = new Socket();
             cleanSocket = serverSocket.accept();
             if(clients.size() == server.maxClients){
@@ -36,12 +46,10 @@ public class Server {
                 continue;
             }
             ClientContainer client = new ClientContainer(cleanSocket, clients.size() + 1, true);
-            client.run();
+            client.start();
             clients.add(client);
-            for(ClientContainer c : clients){
-                if(c.running == false)
-            }
+            if(closeFlag == 1) break;
         }
-
+        serverSocket.close();
     }
 }

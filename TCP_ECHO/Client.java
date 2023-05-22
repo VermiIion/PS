@@ -20,17 +20,17 @@ public class Client {
         String modifiedSentence;
         int port = 7;
         String ip = "localhost";
-        Scanner input = new Scanner(System.in);
-        while(true) {
-            System.out.println("Do you wish to change default IP/port settings?(Y/N)");
-            sentence = input.next();
-            if(!sentence.equals("Y") && !sentence.equals("N")) System.out.println("Incorrect value");
-            else if(sentence.equals("Y")){
-                System.out.println("IP: ");
-                ip = input.next();
-            }
-            else break;
-        }
+//        Scanner input = new Scanner(System.in);
+//        while(true) {
+//            System.out.println("Do you wish to change default IP/port settings?(Y/N)");
+//            sentence = input.next();
+//            if(!sentence.equals("Y") && !sentence.equals("N")) System.out.println("Incorrect value");
+//            else if(sentence.equals("Y")){
+//                System.out.println("IP: ");
+//                ip = input.next();
+//            }
+//            else break;
+//        }
         try {
             clientSocket = new Socket(ip, port);
             outToServer = new DataOutputStream(clientSocket.getOutputStream());

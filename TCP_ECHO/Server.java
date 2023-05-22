@@ -23,6 +23,7 @@ public class Server {
         ServerSocket serverSocket = new ServerSocket();
         serverSocket.bind(new InetSocketAddress(7));
         do {
+            System.out.println("czekam na klienta:");
             Socket cleanSocket = serverSocket.accept();
             System.out.println("Klientów: " + clients.size());
             System.out.println("-----");
@@ -32,7 +33,7 @@ public class Server {
             else client = new ClientContainer(cleanSocket, clients, true);
             client.start();
 
-        } while (!clients.isEmpty());
-        serverSocket.close();
+        } while (true);
+//
     }
 }

@@ -17,7 +17,7 @@ class Client:
 if __name__ == '__main__':
     Temp = Client("localhost", 7)
     while 1:
-        message = input("Message to server: ")
+        message = input("Message to serverBroadcast: ")
         if len(message) == 0:
             Temp.terminate()
         else:

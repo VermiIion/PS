@@ -3,7 +3,6 @@ package TCP_ECHO;
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 public class Client {
     public static void main(String[] argv) throws Exception {
@@ -20,17 +19,7 @@ public class Client {
         String modifiedSentence;
         int port = 7;
         String ip = "localhost";
-//        Scanner input = new Scanner(System.in);
-//        while(true) {
-//            System.out.println("Do you wish to change default IP/port settings?(Y/N)");
-//            sentence = input.next();
-//            if(!sentence.equals("Y") && !sentence.equals("N")) System.out.println("Incorrect value");
-//            else if(sentence.equals("Y")){
-//                System.out.println("IP: ");
-//                ip = input.next();
-//            }
-//            else break;
-//        }
+        port = inputPort(port, validatePort(port));
         try {
             clientSocket = new Socket(ip, port);
             outToServer = new DataOutputStream(clientSocket.getOutputStream());
@@ -39,7 +28,9 @@ public class Client {
             System.out.println("Can't connect to server");
             return;
         }
+        System.out.println("Connection Succesfull!");
         do {
+            System.out.print("Message to server: ");
             sentence = inFromUser.readLine();
             outToServer.write(sentence.getBytes());
             System.out.println("Bytes sent: " + sentence.length());
@@ -49,5 +40,30 @@ public class Client {
 
         } while (!sentence.isEmpty());
         clientSocket.close();
+    }
+
+    static int inputPort(int port, boolean b) {
+        String sentence;
+        Scanner input = new Scanner(System.in);
+        while(true) {
+            System.out.println("Current port number: " + port);
+            System.out.print("Do you wish to change default port settings?(Y/N): ");
+            sentence = input.next();
+            if(!sentence.equals("Y") && !sentence.equals("N")) System.out.println("Incorrect value");
+            else if(sentence.equals("Y")){
+                while(true){
+                    System.out.print("Input new port value: ");
+                    port = input.nextInt();
+                    if(b) break;
+                    System.out.println("Incorrect port number");
+                }
+            }
+            else break;
+        }
+        return port;
+    }
+
+    public static boolean validatePort(final int port) {
+        return port >= 0 && port <= 65535;
     }
 }

@@ -28,7 +28,7 @@ public class ClientContainer extends Thread {
     @Override
     public void run() {
         if (!permission) {
-            System.out.println("id: " + id + " Klient nadliczbowy: ");
+            System.out.println("id: " + id + " Klient nadliczbowy");
             try {
                 inFromClient.read(answer);
                 answer = "SERVER BUSY".getBytes();
@@ -40,16 +40,16 @@ public class ClientContainer extends Thread {
             running = false;
 
         } else {
-            System.out.println("id: " + id + " Klient ok: ");
+            System.out.println("id: " + id + " Klient ok");
             running = true;
             clients.add(this);
         }
         while (running) {
             try {
-                System.out.println("id: " + id + " Czekam na dane od klienta: ");
+                System.out.println("id: " + id + " Czekam na dane od klienta");
                 int answerSize = inFromClient.read(answer);
                 if (answerSize == -1) break;
-                System.out.println("#" + id + " Message: " + new String(answer, 0, answerSize));
+                System.out.println("#" + id + " " + clientSocket.getRemoteSocketAddress() + " Message: " + new String(answer, 0, answerSize));
                 System.out.println("Size: " + answerSize);
                 outToClient.write(answer, 0, answerSize);
             } catch (Exception e) {
@@ -58,6 +58,6 @@ public class ClientContainer extends Thread {
             }
         }
         clients.remove(this);
-        System.out.println("id: " + id + " Koniec klienta: ");
+        System.out.println("id: " + id + " Koniec klienta");
     }
 }

@@ -1,9 +1,11 @@
 package TCP_ECHO;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Server {
     protected int maxClients;
@@ -18,12 +20,13 @@ public class Server {
     public static void main(String[] argv) throws Exception {
         int maxClients = 3;
         int port = 7;
+        port = Client.inputPort(port, validatePort(port));
         Server server = new Server(port,maxClients);
         ArrayList<ClientContainer> clients = new ArrayList<>();
         ServerSocket serverSocket = new ServerSocket();
-        serverSocket.bind(new InetSocketAddress(7));
+        serverSocket.bind(new InetSocketAddress(port));
+        System.out.println("Server started");
         do {
-            System.out.println("czekam na klienta:");
             Socket cleanSocket = serverSocket.accept();
             System.out.println("Klientów: " + clients.size());
             System.out.println("-----");
@@ -34,6 +37,8 @@ public class Server {
             client.start();
 
         } while (true);
-//
+    }
+    public static boolean validatePort(final int port) {
+        return port >= 0 && port <= 65535;
     }
 }

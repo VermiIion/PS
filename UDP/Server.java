@@ -7,10 +7,8 @@ import java.net.MulticastSocket;
 public class Server {
     public static void main(String[] args) {
         try {
-            int port = 9876; // dowolny numer portu
-
-            // Utworzenie gniazda multicast
-            InetAddress group = InetAddress.getByName("230.0.0.1"); // dowolny adres IP grupy multicast
+            int port = 9876;
+            InetAddress group = InetAddress.getByName("localhost");
             MulticastSocket multicastSocket = new MulticastSocket(port);
             multicastSocket.joinGroup(group);
 

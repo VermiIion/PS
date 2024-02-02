@@ -1,0 +1,5 @@
+towar1, 100
+towar2, 300
+towar3, 200
+towar4, 500
+towar5, 600

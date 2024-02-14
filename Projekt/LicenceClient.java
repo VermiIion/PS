@@ -108,7 +108,6 @@ public class LicenceClient {
     public static void main(String[] args) {
         LicenceClient licenceClientAPI = new LicenceClient();
 
-        // Przykładowe użycie API Klienta Licencji
         licenceClientAPI.start("localhost", 8080); // Startuje klienta z adresem serwera i portem
         licenceClientAPI.setLicence("Radek", "9F3A0874-5C23449A-53FC05D6-8EDA1E1B"); // Ustawia nową licencję
         String licenceToken = licenceClientAPI.getLicenceToken(); // Pobiera token licencji

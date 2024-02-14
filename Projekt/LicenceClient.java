@@ -1,8 +1,14 @@
+import org.json.JSONObject;
+
+import javax.swing.plaf.synth.SynthTabbedPaneUI;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +21,7 @@ public class LicenceClient {
     private String currentLicenceUserName;
     private String currentLicenceKey;
     private Socket socket;
+    private ScheduledExecutorService executorService;
 
     public LicenceClient() {
         this.serverIP = "";
@@ -24,6 +31,7 @@ public class LicenceClient {
         this.currentLicenceUserName = "";
         this.currentLicenceKey = "";
         this.socket = null;
+        this.executorService = Executors.newSingleThreadScheduledExecutor();
     }
 
     public void start(String serverIP, int serverPort) {
@@ -52,22 +60,24 @@ public class LicenceClient {
                 // Wysłanie żądania pobrania tokenu licencji na serwer
                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                out.println("Licence Username: " + currentLicenceUserName + " Licence Key: " + currentLicenceKey);
+                JSONObject message = new JSONObject();
+                message.put("Licence Username", currentLicenceUserName);
+                message.put("Licence Key", currentLicenceKey);
+                out.println(message.toString());
 
                 // Odczytanie odpowiedzi od serwera
-                String response = in.readLine();
-                if (response.startsWith("LICENCE_TOKEN")) {
-                    licenceToken = response.split(" ")[1];
+                JSONObject response = new JSONObject(in.readLine());
+                if (response.getBoolean("Licence")) {
                     licenceTokenValid = true;
-
+                    LocalDateTime expirationTime = LocalDateTime.parse(response.getString("Expired"));
+                    licenceToken = expirationTime.toString();
                     // Ustawienie timera do odnowienia tokena po upływie czasu ważności
-                    ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
                     executorService.schedule(() -> {
                         licenceTokenValid = false;
                         System.out.println("Licence token expired.");
-                    }, 600, TimeUnit.SECONDS); // 600 sekund - czas ważności tokena licencji
+                    }, expirationTime.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) , TimeUnit.SECONDS); // 600 sekund - czas ważności tokena licencji
                 } else {
-                    System.out.println("Error while getting licence token: " + response);
+                    System.out.println(response.getString("Description"));
                 }
             } catch (IOException e) {
                 System.out.println("Error while communicating with the server: " + e.getMessage());
@@ -85,6 +95,7 @@ public class LicenceClient {
         this.licenceToken = "";
         this.currentLicenceUserName = "";
         this.currentLicenceKey = "";
+        this.executorService.shutdownNow();
         try {
             if (socket != null) {
                 socket.close();
@@ -102,6 +113,10 @@ public class LicenceClient {
         licenceClientAPI.setLicence("Radek", "9F3A0874-5C23449A-53FC05D6-8EDA1E1B"); // Ustawia nową licencję
         String licenceToken = licenceClientAPI.getLicenceToken(); // Pobiera token licencji
         System.out.println("Licence token: " + licenceToken);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("end");
+        scanner.next();
         licenceClientAPI.stop(); // Zatrzymuje klienta
+        System.out.println("ended");
     }
 }

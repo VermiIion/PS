@@ -6,7 +6,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,19 +73,19 @@ public class LicenceServer {
 
             // Parsowanie żądania
             JSONObject jsonRequest = new JSONObject(request);
-            String userName = jsonRequest.getString("LicenceUserName");
-            String licenceKey = jsonRequest.getString("LicenceKey");
-
+            String userName = jsonRequest.getString("Licence Username");
+            String licenceKey = jsonRequest.getString("Licence Key");
+            licenceKey = licenceKey.replaceAll("-","");
             // Weryfikacja klucza licencji
             if (verifyLicenceKey(userName, licenceKey)) {
                 // Jeśli klucz jest poprawny
                 Licence licence = licences.get(userName);
-                if (licence != null && isValidLicence(licence)) {
+                if (licence != null) {
                     // Jeśli licencja jest ważna
                     JSONObject responseJson = new JSONObject();
                     responseJson.put("LicenceUserName", userName);
                     responseJson.put("Licence", true);
-                    responseJson.put("Expired", getExpirationTime(licence));
+                    responseJson.put("Expired",  LocalDateTime.ofEpochSecond((LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) + licence.validationTime),0,ZoneOffset.UTC));
                     out.println(responseJson.toString());
                 } else {
                     // Jeśli nie ma takiej licencji lub jest nieważna
@@ -130,7 +132,7 @@ public class LicenceServer {
     }
 
     private String generateLicenceKey(String userName) throws NoSuchAlgorithmException {
-        String input = userName + LocalDateTime.now().toString();
+        String input = userName;
         MessageDigest md = MessageDigest.getInstance("MD5");
         md.update(input.getBytes());
         byte[] digest = md.digest();
@@ -138,7 +140,7 @@ public class LicenceServer {
         for (byte b : digest) {
             sb.append(String.format("%02x", b & 0xff));
         }
-        return sb.toString();
+        return sb.toString().toUpperCase();
     }
 
     private static class Licence {

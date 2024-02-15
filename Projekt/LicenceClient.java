@@ -69,15 +69,23 @@ public class LicenceClient {
                 JSONObject response = new JSONObject(in.readLine());
                 if (response.getBoolean("Licence")) {
                     licenceTokenValid = true;
-                    LocalDateTime expirationTime = LocalDateTime.parse(response.getString("Expired"));
-                    licenceToken = expirationTime.toString();
-                    // Ustawienie timera do odnowienia tokena po upływie czasu ważności
-                    executorService.schedule(() -> {
-                        licenceTokenValid = false;
-                        System.out.println("Licence token expired.");
-                    }, expirationTime.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) , TimeUnit.SECONDS); // 600 sekund - czas ważności tokena licencji
-                } else {
+                    String expiration = response.getString("Expired");
+                    if (!expiration.equals("Infinite")) {
+                        LocalDateTime expirationTime = LocalDateTime.parse(response.getString("Expired"));
+                        licenceToken = expirationTime.toString();
+                        // Ustawienie timera do odnowienia tokena po upływie czasu ważności
+                        executorService.schedule(() -> {
+                            licenceTokenValid = false;
+                            System.out.println("Licence token expired.");
+                            System.out.println("Getting new token.");
+                            getLicenceToken();
+                        }, expirationTime.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC), TimeUnit.SECONDS); // 600 sekund - czas ważności tokena licencji
+                    }else licenceToken = "Infinite";
+                }
+                else {
                     System.out.println(response.getString("Description"));
+                    stop();
+                    System.exit(0);
                 }
             } catch (IOException e) {
                 System.out.println("Error while communicating with the server: " + e.getMessage());
@@ -109,7 +117,7 @@ public class LicenceClient {
         LicenceClient licenceClientAPI = new LicenceClient();
 
         licenceClientAPI.start("localhost", 8080); // Startuje klienta z adresem serwera i portem
-        licenceClientAPI.setLicence("Radek", "9F3A0874-5C23449A-53FC05D6-8EDA1E1B"); // Ustawia nową licencję
+        licenceClientAPI.setLicence("Radek", "9F3A08745C23449A53FC05D68EDA1E1B"); // Ustawia nową licencję
         String licenceToken = licenceClientAPI.getLicenceToken(); // Pobiera token licencji
         System.out.println("Licence token: " + licenceToken);
         Scanner scanner = new Scanner(System.in);

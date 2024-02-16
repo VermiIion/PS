@@ -61,8 +61,8 @@ public class LicenceClient {
                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 JSONObject message = new JSONObject();
-                message.put("Licence Username", currentLicenceUserName);
-                message.put("Licence Key", currentLicenceKey);
+                message.put("Licence Username", this.currentLicenceUserName);
+                message.put("Licence Key", this.currentLicenceKey);
                 out.println(message.toString());
 
                 // Odczytanie odpowiedzi od serwera
@@ -73,6 +73,7 @@ public class LicenceClient {
                     if (!expiration.equals("Infinite")) {
                         LocalDateTime expirationTime = LocalDateTime.parse(response.getString("Expired"));
                         licenceToken = expirationTime.toString();
+                        System.out.println("Licence token: " + licenceToken);
                         // Ustawienie timera do odnowienia tokena po upływie czasu ważności
                         executorService.schedule(() -> {
                             licenceTokenValid = false;
@@ -89,6 +90,9 @@ public class LicenceClient {
                 }
             } catch (IOException e) {
                 System.out.println("Error while communicating with the server: " + e.getMessage());
+                start(this.serverIP,this.serverPort);
+                e.printStackTrace();
+                System.exit(-1);
             }
         }
         return licenceToken;
@@ -113,17 +117,18 @@ public class LicenceClient {
         }
     }
 
-    public static void main(String[] args) {
-        LicenceClient licenceClientAPI = new LicenceClient();
-
-        licenceClientAPI.start("localhost", 8080); // Startuje klienta z adresem serwera i portem
-        licenceClientAPI.setLicence("Radek", "9F3A08745C23449A53FC05D68EDA1E1B"); // Ustawia nową licencję
-        String licenceToken = licenceClientAPI.getLicenceToken(); // Pobiera token licencji
-        System.out.println("Licence token: " + licenceToken);
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("end");
-        scanner.next();
-        licenceClientAPI.stop(); // Zatrzymuje klienta
-        System.out.println("ended");
-    }
+//    public static void main(String[] args) {
+//        LicenceClient licenceClientAPI = new LicenceClient();
+//
+//        licenceClientAPI.start("localhost", 8080); // Startuje klienta z adresem serwera i portem
+//        licenceClientAPI.setLicence("Admin", "E3AFED0047B08059D0FADA10F400C1E5"); // Ustawia nową licencję
+//        // Admin E3AFED0047B08059D0FADA10F400C1E5
+//        // Radek 9F3A08745C23449A53FC05D68EDA1E1B
+//        String licenceToken = licenceClientAPI.getLicenceToken(); // Pobiera token licencji
+//        Scanner scanner = new Scanner(System.in);
+//        System.out.println("end");
+//        scanner.next();
+//        licenceClientAPI.stop(); // Zatrzymuje klienta
+//        System.out.println("ended");
+//    }
 }

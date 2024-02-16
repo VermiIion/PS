@@ -18,14 +18,16 @@ import java.util.concurrent.TimeUnit;
 
 public class LicenceServer {
     private final int tcpPort;
-    private final Map<String, Licence> licences = new HashMap<>();
-    private Map<String,Integer> countLicenses  = new Hashtable<String,Integer>();;
+    private final Map<String, Licence> licences;
     ServerSocket serverSocket;
+    ArrayList<Socket> clientSockets;
     ScheduledExecutorService executorService;
-    List<Socket> clientSockets;
 
     public LicenceServer(int tcpPort) {
+        this.licences = new HashMap<>();
+        this.executorService = Executors.newSingleThreadScheduledExecutor();
         this.tcpPort = tcpPort;
+        this.clientSockets = new ArrayList<>();
     }
 
     public void start() {
@@ -48,13 +50,15 @@ public class LicenceServer {
             }
 
             // Zakończ executorService, aby uniknąć utraty zasobów
-            executorService.shutdown();
 
-            // Oczekuj na zakończenie wszystkich zadań zaplanowanych w executorService
             if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
                 // Jeśli po 10 sekundach zadania nadal działają, zakończ je natychmiast
                 executorService.shutdownNow();
+                executorService.shutdown();
             }
+
+            // Oczekuj na zakończenie wszystkich zadań zaplanowanych w executorService
+
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -74,7 +78,7 @@ public class LicenceServer {
                 String userName = licenceObject.getString("LicenceUserName");
                 long validationTime = licenceObject.getLong("ValidationTime");
                 int count = licenceObject.getInt("Licence");
-                licences.put(userName, new Licence(userName, validationTime, count));
+                this.licences.put(userName, new Licence(userName, validationTime, count));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -85,7 +89,9 @@ public class LicenceServer {
         try (ServerSocket serverSocket = new ServerSocket(tcpPort)) {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
+                this.clientSockets.add(clientSocket);
                 new Thread(() -> handleTcpClient(clientSocket)).start();
+                System.out.println("nowy klient");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -98,90 +104,62 @@ public class LicenceServer {
 
             StringBuilder requestBuilder = new StringBuilder();
             String line;
-            line = in.readLine();
-            requestBuilder.append(line);
-            String request = requestBuilder.toString();
+            while(true) {
+               if((line = in.readLine()) == null) break;
+                requestBuilder.append(line);
+                String request = requestBuilder.toString();
 
-            // Parsowanie żądania
-            JSONObject jsonRequest = new JSONObject(request);
-            String userName = jsonRequest.getString("Licence Username");
-            String licenceKey = jsonRequest.getString("Licence Key");
-            licenceKey = licenceKey.replaceAll("-","");
-            // Weryfikacja klucza licencji
-            if (verifyLicenceKey(userName, licenceKey)) {
-                // Jeśli klucz jest poprawny
-                Licence licence = licences.get(userName);
-                if (licence != null) {
-                    // Jeśli licencja jest ważna
-                    JSONObject responseJson = new JSONObject();
-                    responseJson.put("LicenceUserName", userName);
-                    responseJson.put("Licence", true);
-                    if(userName.equals("Admin")) {
-                        responseJson.put("Expired",  "Infinite");
-                        out.println(responseJson.toString());
-                        System.out.println("Licence token for: " + userName + "\nExpires at: " + "Infinite");
-                    }
-                    else {
-                        if(!this.countLicenses.isEmpty()) {
-                            if (this.licences.get(userName).count <= countLicenses.get(userName)) {
-                                responseJson.put("LicenceUserName", userName);
-                                responseJson.put("Licence", false);
-                                responseJson.put("Description", "Przekroczono ilość licencji dla użytkownika " + userName);
-                                out.println(responseJson.toString());
-                            }
-                            else{
-                                this.countLicenses.put(userName, this.countLicenses.get(userName) + 1);
-                                LocalDateTime expiration = LocalDateTime.ofEpochSecond((LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) + licence.validationTime), 0, ZoneOffset.UTC);
-                                responseJson.put("Expired", expiration);
-                                out.println(responseJson.toString());
-                                System.out.println("Licence token for: " + userName + "\nExpires at: " + expiration);
-                                ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-                                executorService.schedule(() -> {
-                                    if (this.countLicenses.get(userName) > 0)
-                                        this.countLicenses.put(userName, this.countLicenses.get(userName) - 1);
-                                    else this.countLicenses.remove(userName);
-                                    System.out.println("Licence token expired.");
-                                }, expiration.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC), TimeUnit.SECONDS);
-                            }
-                        }
-                        else {
-                            this.countLicenses.put(userName, 1);
+                // Parsowanie żądania
+                JSONObject jsonRequest = new JSONObject(request);
+                String userName = jsonRequest.getString("Licence Username");
+                String licenceKey = jsonRequest.getString("Licence Key");
+                licenceKey = licenceKey.replaceAll("-", "");
+                // Weryfikacja klucza licencji
+                if (verifyLicenceKey(userName, licenceKey)) {
+                    // Jeśli klucz jest poprawny
+                    Licence licence = this.licences.get(userName);
+                    if (licence != null) {
+                        // Jeśli licencja jest ważna
+                        JSONObject responseJson = new JSONObject();
+                        responseJson.put("LicenceUserName", userName);
+                        responseJson.put("Licence", true);
+                        if (userName.equals("Admin")) {
+                            responseJson.put("Expired", "Infinite");
+                            out.println(responseJson.toString());
+                            System.out.println("Licence token for: " + userName + "\nExpires at: " + "Infinite");
+                        } else {
                             LocalDateTime expiration = LocalDateTime.ofEpochSecond((LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) + licence.validationTime), 0, ZoneOffset.UTC);
                             responseJson.put("Expired", expiration);
                             out.println(responseJson.toString());
                             System.out.println("Licence token for: " + userName + "\nExpires at: " + expiration);
-                            ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
                             executorService.schedule(() -> {
-                                if (this.countLicenses.get(userName) > 0)
-                                    this.countLicenses.put(userName, this.countLicenses.get(userName) - 1);
-                                else this.countLicenses.remove(userName);
                                 System.out.println("Licence token expired.");
                             }, expiration.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC), TimeUnit.SECONDS);
                         }
 
+                    } else {
+                        // Jeśli nie ma takiej licencji lub jest nieważna
+                        JSONObject responseJson = new JSONObject();
+                        responseJson.put("LicenceUserName", userName);
+                        responseJson.put("Licence", false);
+                        responseJson.put("Description", "Brak ważnej licencji dla użytkownika " + userName);
+                        out.println(responseJson.toString());
                     }
                 } else {
-                    // Jeśli nie ma takiej licencji lub jest nieważna
+                    // Jeśli klucz jest niepoprawny
                     JSONObject responseJson = new JSONObject();
                     responseJson.put("LicenceUserName", userName);
                     responseJson.put("Licence", false);
-                    responseJson.put("Description", "Brak ważnej licencji dla użytkownika " + userName);
+                    responseJson.put("Description", "Niepoprawny klucz licencji dla użytkownika " + userName);
                     out.println(responseJson.toString());
                 }
-            } else {
-                // Jeśli klucz jest niepoprawny
-                JSONObject responseJson = new JSONObject();
-                responseJson.put("LicenceUserName", userName);
-                responseJson.put("Licence", false);
-                responseJson.put("Description", "Niepoprawny klucz licencji dla użytkownika " + userName);
-                out.println(responseJson.toString());
             }
-
             // Zamykanie połączenia z klientem
             //clientSocket.close();
         } catch (IOException | NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
+
     }
 
 

@@ -4,7 +4,7 @@
       "LicenceUserName": "Radek",
       "Licence": 2,
       "IPadresses": ["10.0.0.0/24", "192.168.1.0/24"],
-      "ValidationTime": 600
+      "ValidationTime": 6
     },
     {
       "LicenceUserName": "Guest",

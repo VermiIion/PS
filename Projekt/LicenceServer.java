@@ -1,3 +1,5 @@
+package Projekt;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -41,24 +43,14 @@ public class LicenceServer {
 
     public void stop() {
         try {
-            // Zamknij gniazdo serwera
             serverSocket.close();
-
-            // Zamknij wszystkie otwarte gniazda klientów
             for (Socket clientSocket : clientSockets) {
                 clientSocket.close();
             }
-
-            // Zakończ executorService, aby uniknąć utraty zasobów
-
             if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
-                // Jeśli po 10 sekundach zadania nadal działają, zakończ je natychmiast
                 executorService.shutdownNow();
                 executorService.shutdown();
             }
-
-            // Oczekuj na zakończenie wszystkich zadań zaplanowanych w executorService
-
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -108,15 +100,11 @@ public class LicenceServer {
                if((line = in.readLine()) == null) break;
                 requestBuilder.append(line);
                 String request = requestBuilder.toString();
-
-                // Parsowanie żądania
                 JSONObject jsonRequest = new JSONObject(request);
                 String userName = jsonRequest.getString("Licence Username");
                 String licenceKey = jsonRequest.getString("Licence Key");
                 licenceKey = licenceKey.replaceAll("-", "");
-                // Weryfikacja klucza licencji
                 if (verifyLicenceKey(userName, licenceKey)) {
-                    // Jeśli klucz jest poprawny
                     Licence licence = this.licences.get(userName);
                     if (licence != null) {
                         // Jeśli licencja jest ważna
@@ -154,8 +142,7 @@ public class LicenceServer {
                     out.println(responseJson.toString());
                 }
             }
-            // Zamykanie połączenia z klientem
-            //clientSocket.close();
+            System.out.println("User Disconnected");
         } catch (IOException | NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -164,21 +151,15 @@ public class LicenceServer {
 
 
     private boolean verifyLicenceKey(String userName, String licenceKey) throws NoSuchAlgorithmException {
-        // Tutaj możemy zaimplementować logikę weryfikacji klucza licencji
-        // Wygeneruj klucz licencji na podstawie nazwy użytkownika
         String generatedKey = generateLicenceKey(userName);
-
-        // Porównaj wygenerowany klucz z przesłanym kluczem
         return generatedKey.equals(licenceKey);
     }
 
     private boolean isValidLicence(Licence licence) {
-        // Sprawdź czy licencja jest ważna, porównując czas ważności z aktualnym czasem
         return licence.getValidationTime() > System.currentTimeMillis() / 1000;
     }
 
     private String getExpirationTime(Licence licence) {
-        // Zwróć czas wygaśnięcia licencji w formacie ISO 8601
         return LocalDateTime.now().plusSeconds(licence.getValidationTime())
                 .format(DateTimeFormatter.ISO_DATE_TIME);
     }

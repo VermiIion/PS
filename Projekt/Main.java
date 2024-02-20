@@ -27,7 +27,7 @@ public class Main {
         // Radek 9F3A08745C23449A53FC05D68EDA1E1B
         client.setLicence("Radek", "9F3A08745C23449A53FC05D68EDA1E1B");
         System.out.println(client.getLicenceToken());
-        System.out.println("end");
+        System.out.println("wpisz cokolwiek aby zakończyć program");
         scanner.next();
         client.stop();
         System.out.println("ended");

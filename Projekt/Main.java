@@ -19,13 +19,13 @@ public class Main {
             System.out.println("Wpisz port");
             port = scanner.nextInt();
         }catch (InputMismatchException e){
-            System.out.println("Niewłaściwy Port");
+            System.out.println("Niewłaściwy format Portu");
             System.exit(1);
         }
         client.start("localhost",8080);
         // Admin E3AFED0047B08059D0FADA10F400C1E5
         // Radek 9F3A08745C23449A53FC05D68EDA1E1B
-        client.setLicence("Radek", "9F3A08745C23449A53FC05D68EDA1E1B");
+        client.setLicence("Radek", "9F3A08745C2G449A53FC05D68EDA1E1B");
         System.out.println(client.getLicenceToken());
         System.out.println("wpisz cokolwiek aby zakończyć program");
         scanner.next();
